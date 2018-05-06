@@ -100,6 +100,10 @@ public class DbUtils {
         return this.get(columnFamilyHandleList.get(2), key);
     }
 
+    public byte[] getFileToTreat(byte[] key) throws RocksDBException {
+        return this.get(columnFamilyHandleList.get(1), key);
+    }
+
     private byte[] get(ColumnFamilyHandle columnFamilyHandle, byte[] key) throws RocksDBException {
         return db.get(columnFamilyHandle, key);
     }

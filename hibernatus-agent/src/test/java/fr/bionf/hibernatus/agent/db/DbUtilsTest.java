@@ -56,12 +56,43 @@ public class DbUtilsTest {
     }
 
     @Test
-    public void writeFileToTreat() {
+    public void shouldCreateAFileToTreatAndIterateAndDelete() throws IOException, RocksDBException, ClassNotFoundException {
+        RocksIterator iterator = dbUtils.iteratorFileToTreat();
+        int nbKey = 0;
+        for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
+            nbKey++;
+        }
+        assertEquals(11, nbKey);
 
+        byte[] fileId = "11".getBytes();
+        FileToTreat fileToTreat = new FileToTreat(1L, 1L);
+
+        dbUtils.writeFileToTreat(fileId, SerializationUtil.serialize(new FileToTreat(1L, 1L)));
+
+        FileToTreat fileToTreatGet = (FileToTreat) SerializationUtil.deserialize(dbUtils.getFileToTreat(fileId));
+        assertEquals(fileToTreat, fileToTreatGet);
+
+        iterator = dbUtils.iteratorFileToTreat();
+        nbKey = 0;
+        for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
+            nbKey++;
+        }
+        assertEquals(12, nbKey);
+
+        //delete
+        dbUtils.deleteFileToTreat(fileId);
+        assertNull(dbUtils.getFileToTreat(fileId));
     }
 
     @Test
     public void shouldCreateAFileBackupAndIterateAndDelete() throws IOException, RocksDBException, ClassNotFoundException {
+        RocksIterator iterator = dbUtils.iteratorFileBackup();
+        int nbKey = 0;
+        for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
+            nbKey++;
+        }
+        assertEquals(11, nbKey);
+
         byte[] fileId = "11".getBytes();
         FileBackup fileBackuped = new FileBackup();
         fileBackuped.addReference(
@@ -77,8 +108,8 @@ public class DbUtilsTest {
         assertEquals(fileBackuped.references.firstEntry().getValue(),
                 fileBackupedGet.references.firstEntry().getValue());
 
-        RocksIterator iterator = dbUtils.iteratorFileBackup();
-        int nbKey = 0;
+        iterator = dbUtils.iteratorFileBackup();
+        nbKey = 0;
         for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
             nbKey++;
         }
@@ -87,16 +118,6 @@ public class DbUtilsTest {
         //delete
         dbUtils.deleteFileBackup(fileId);
         assertNull(dbUtils.getFileBackup(fileId));
-    }
-
-    @Test
-    public void getFileToTreat() {
-
-    }
-
-    @Test
-    public void iteratorFileToTreat() {
-
     }
 
     @Test
