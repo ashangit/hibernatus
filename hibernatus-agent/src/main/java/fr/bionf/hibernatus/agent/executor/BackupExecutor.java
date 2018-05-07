@@ -35,7 +35,7 @@ public class BackupExecutor implements Runnable {
         if (fileBackuped == null) {
             fileBackuped = new FileBackup();
         }
-        String archiveId = amazonGlacierArchiveOperations.upload("examplevaultfordelete", new String(file));
+        String archiveId = amazonGlacierArchiveOperations.upload(vaultName, new String(file));
         long now = System.currentTimeMillis();
         fileBackuped.addReference(
                 fileToTreat.mtime,
