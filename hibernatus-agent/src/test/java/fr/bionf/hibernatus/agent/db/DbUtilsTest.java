@@ -12,7 +12,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
-import static junit.framework.Assert.*;
+import static org.junit.Assert.*;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 
@@ -29,7 +29,7 @@ public class DbUtilsTest {
             byte[] fileId = String.valueOf(i).getBytes();
             dbUtils.writeFileToTreat(fileId, SerializationUtil.serialize(new FileToTreat(i, i)));
             FileBackup fileBackuped = new FileBackup();
-            fileBackuped.addReference(i, i, i, "test_archive_id_" + String.valueOf(i));
+            fileBackuped.addReference(i, i, i, i, "test_archive_id_" + String.valueOf(i));
             dbUtils.writeFileBackup(fileId, SerializationUtil.serialize(fileBackuped));
         }
     }
@@ -96,6 +96,7 @@ public class DbUtilsTest {
         byte[] fileId = "11".getBytes();
         FileBackup fileBackuped = new FileBackup();
         fileBackuped.addReference(
+                11L,
                 11L,
                 11L,
                 11L,

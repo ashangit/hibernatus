@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 public class BackupExecutor implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(BackupExecutor.class);
@@ -20,11 +21,13 @@ public class BackupExecutor implements Runnable {
     private final DbUtils dbUtils;
     private final AmazonGlacierArchiveOperations amazonGlacierArchiveOperations;
     private final String vaultName;
+    private final long retention;
 
-    public BackupExecutor(DbUtils dbUtils, AmazonGlacier client, ProfileCredentialsProvider credentials, String vaultName) {
+    public BackupExecutor(DbUtils dbUtils, AmazonGlacier client, ProfileCredentialsProvider credentials, String vaultName, long retention) {
         this.dbUtils = dbUtils;
         this.amazonGlacierArchiveOperations = new AmazonGlacierArchiveOperations(client, credentials);
         this.vaultName = vaultName;
+        this.retention = TimeUnit.DAYS.toMillis(retention);
     }
 
     private void backup(byte[] file, FileToTreat fileToTreat, FileBackup fileBackuped) throws IOException, RocksDBException {
@@ -33,10 +36,12 @@ public class BackupExecutor implements Runnable {
             fileBackuped = new FileBackup();
         }
         String archiveId = amazonGlacierArchiveOperations.upload("examplevaultfordelete", new String(file));
+        long now = System.currentTimeMillis();
         fileBackuped.addReference(
                 fileToTreat.mtime,
                 fileToTreat.length,
-                System.currentTimeMillis(),
+                now,
+                now + retention,
                 archiveId);
         dbUtils.writeFileBackup(file, SerializationUtil.serialize(fileBackuped));
     }

@@ -87,15 +87,15 @@ public class HibernatusAgent {
 
     private void initBackupScheduler() {
         long INTERVAL_BACKUP = 5;
+        int retention = (int) config.get("backup.retention");
         Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(
-                new BackupExecutor(dbUtils, client, credentials, vaultName),
+                new BackupExecutor(dbUtils, client, credentials, vaultName, retention),
                 0, INTERVAL_BACKUP, TimeUnit.SECONDS);
     }
 
     private void initPurgeScheduler() {
         long interval = ((Number) config.get("purge.interval")).longValue();
-        int retention = (int) config.get("purge.retention");
-        Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(new PurgeExecutor(dbUtils, retention),
+        Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(new PurgeExecutor(dbUtils),
                 0, interval, TimeUnit.SECONDS);
     }
 

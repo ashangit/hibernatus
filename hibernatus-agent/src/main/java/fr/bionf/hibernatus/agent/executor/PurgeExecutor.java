@@ -16,16 +16,14 @@ public class PurgeExecutor implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(PurgeExecutor.class);
 
     private final DbUtils dbUtils;
-    private final long retention;
 
-    public PurgeExecutor(DbUtils dbUtils, int retention) {
+    public PurgeExecutor(DbUtils dbUtils) {
         this.dbUtils = dbUtils;
-        this.retention = TimeUnit.DAYS.toMillis(retention);
     }
 
     @Override
     public void run() {
-        long olderEpoch = System.currentTimeMillis() - retention;
+        long now = System.currentTimeMillis();
         logger.info("Start delete old backup");
         RocksIterator iterator = dbUtils.iteratorFileBackup();
         // Iterate on file to backup
@@ -35,8 +33,8 @@ public class PurgeExecutor implements Runnable {
                 FileBackup fileBackup = (FileBackup) SerializationUtil.deserialize(iterator.value());
                 for (Map.Entry<Long, FileBackup.AwsFile> entry : fileBackup.references.entrySet()) {
                     FileBackup.AwsFile awsFile = entry.getValue();
-                    if (awsFile.btime < olderEpoch) {
-                        logger.info("Delete backup {} for file {}", awsFile.btime, new String(file));
+                    if (awsFile.deleteTimestamp < now) {
+                        logger.info("Delete backup {} for file {}", awsFile.deleteTimestamp, new String(file));
                         // TODO delete aws file
 
                         fileBackup.references.remove(entry.getKey());
