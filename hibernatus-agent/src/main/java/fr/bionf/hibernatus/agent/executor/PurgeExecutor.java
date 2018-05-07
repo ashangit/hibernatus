@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 public class PurgeExecutor implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(PurgeExecutor.class);

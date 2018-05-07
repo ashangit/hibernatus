@@ -6,16 +6,16 @@ import java.util.*;
 public class FileBackup implements Serializable {
     public TreeMap<Long, AwsFile> references = new TreeMap<>();
 
-    public void addReference(long mtime, long length, long btime, long deleteTimestamp, String awsObject) {
-        references.put(btime, new AwsFile(mtime, length, btime, deleteTimestamp, awsObject));
+    public void addReference(long modificationTimestamp, long length, long backupTimestamp, long deleteTimestamp, String awsObject) {
+        references.put(backupTimestamp, new AwsFile(modificationTimestamp, length, backupTimestamp, deleteTimestamp, awsObject));
     }
 
     public class AwsFile implements Serializable {
         public Long length;
         public Long modificationTimestamp;
-        public Long backupTimestamp;
+        Long backupTimestamp;
         public Long deleteTimestamp;
-        public String awsObject;
+        String awsObject;
 
         AwsFile(long modificationTimestamp, long length, long backupTimestamp, long deleteTimestamp, String awsObject) {
             this.modificationTimestamp = modificationTimestamp;

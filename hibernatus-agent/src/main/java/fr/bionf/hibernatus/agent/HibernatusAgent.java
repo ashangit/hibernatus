@@ -71,7 +71,7 @@ public class HibernatusAgent {
         dbUtils = new DbUtils(dbPath);
         try {
             dbUtils.open();
-        } catch (RocksDBException | IOException e) {
+        } catch (RocksDBException e) {
             logger.error("", e);
             dbUtils.close();
             throw e;
@@ -99,7 +99,7 @@ public class HibernatusAgent {
                 0, interval, TimeUnit.SECONDS);
     }
 
-    private void close() throws RocksDBException {
+    private void close() {
         dbUtils.close();
     }
 

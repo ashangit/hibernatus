@@ -66,9 +66,8 @@ public class BackupExecutor implements Runnable {
                 } else {
                     // Check if file has been modified
                     FileBackup fileBackuped = (FileBackup) SerializationUtil.deserialize(value);
-                    FileBackup.AwsFile awsFile = (FileBackup.AwsFile) fileBackuped.references
-                            .get(fileBackuped.references.lastKey());
-                    if (!awsFile.mtime.equals(fileToTreat.mtime) || !awsFile.length.equals(fileToTreat.length)) {
+                    FileBackup.AwsFile awsFile = fileBackuped.references.get(fileBackuped.references.lastKey());
+                    if (!awsFile.modificationTimestamp.equals(fileToTreat.mtime) || !awsFile.length.equals(fileToTreat.length)) {
                         backup(file, fileToTreat, fileBackuped);
                     }
                 }

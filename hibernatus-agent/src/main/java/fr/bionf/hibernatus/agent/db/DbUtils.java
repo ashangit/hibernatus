@@ -19,7 +19,6 @@ public class DbUtils {
     private final List<ColumnFamilyHandle> columnFamilyHandleList = new ArrayList<>();
     private DBOptions dbOptions;
     private RocksDB db;
-    private BackupableDBOptions backupableDBOptions;
     private BackupEngine backupEngine;
 
     private ColumnFamilyOptions cfOpts = new ColumnFamilyOptions()
@@ -40,7 +39,7 @@ public class DbUtils {
 
         createDBPaths();
 
-        backupableDBOptions = new BackupableDBOptions(backupPath)
+        BackupableDBOptions backupableDBOptions = new BackupableDBOptions(backupPath)
                 .setShareTableFiles(true)
                 .setSync(true);
 
@@ -57,7 +56,7 @@ public class DbUtils {
         }
     }
 
-    public void open() throws RocksDBException, IOException {
+    public void open() throws RocksDBException {
         dbOptions = new DBOptions()
                 .setCreateIfMissing(true)
                 .setCreateMissingColumnFamilies(true);
@@ -67,11 +66,9 @@ public class DbUtils {
 
 
     public void close() {
-        if (columnFamilyHandleList != null) {
-            for (ColumnFamilyHandle columnFamilyHandle :
-                    columnFamilyHandleList) {
-                columnFamilyHandle.close();
-            }
+        for (ColumnFamilyHandle columnFamilyHandle :
+                columnFamilyHandleList) {
+            columnFamilyHandle.close();
         }
         if (db != null) {
             db.close();
@@ -100,7 +97,7 @@ public class DbUtils {
         return this.get(columnFamilyHandleList.get(2), key);
     }
 
-    public byte[] getFileToTreat(byte[] key) throws RocksDBException {
+    byte[] getFileToTreat(byte[] key) throws RocksDBException {
         return this.get(columnFamilyHandleList.get(1), key);
     }
 
@@ -136,7 +133,7 @@ public class DbUtils {
         }
     }
 
-    public void backup() throws RocksDBException {
+    void backup() throws RocksDBException {
         backupEngine.createNewBackup(db);
         backupEngine.purgeOldBackups(2);
     }
@@ -145,7 +142,7 @@ public class DbUtils {
         restore(this.dbPath);
     }
 
-    public void restore(String path) throws RocksDBException {
+    void restore(String path) throws RocksDBException {
         RestoreOptions restoreOptions = new RestoreOptions(false);
         backupEngine.restoreDbFromLatestBackup(path, path, restoreOptions);
     }
