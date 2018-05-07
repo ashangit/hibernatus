@@ -1,6 +1,7 @@
 package fr.bionf.hibernatus.agent.db;
 
 import fr.bionf.hibernatus.agent.Constants;
+import fr.bionf.hibernatus.agent.glacier.AmazonGlacierArchiveOperations;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -11,10 +12,12 @@ import org.rocksdb.RocksIterator;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
+import static org.mockito.Mockito.mock;
 
 public class DbUtilsTest {
     @Rule
@@ -22,20 +25,28 @@ public class DbUtilsTest {
     private File dbFolder;
     private File backupFolder;
 
+    private long retention = TimeUnit.DAYS.toMillis(1L);
+    private String vaultName = "exempleVault";
+
     private DbUtils dbUtils;
+    private AmazonGlacierArchiveOperations amazonGlacierArchiveOperations;
 
     private void writeData(long from, long to) throws IOException, RocksDBException {
         for (long i = from; i <= to; i++) {
             byte[] fileId = String.valueOf(i).getBytes();
-            dbUtils.writeFileToTreat(fileId, SerializationUtil.serialize(new FileToTreat(i, i)));
+            FileToTreat fileToTreat = new FileToTreat(i, i);
+            dbUtils.writeFileToTreat(fileId, SerializationUtil.serialize(fileToTreat));
             FileBackup fileBackuped = new FileBackup();
-            fileBackuped.addReference(i, i, i, i, "test_archive_id_" + String.valueOf(i));
+            fileBackuped.backupReference(amazonGlacierArchiveOperations, dbUtils, fileId,
+                    fileToTreat, retention, vaultName);
             dbUtils.writeFileBackup(fileId, SerializationUtil.serialize(fileBackuped));
         }
     }
 
     @Before
     public void setUp() throws IOException, RocksDBException {
+        amazonGlacierArchiveOperations = mock(AmazonGlacierArchiveOperations.class);
+
         dbFolder = new File(rootDbFolder.getRoot().getAbsolutePath()
                 + Constants.SUB_DB_PATH);
         backupFolder = new File(rootDbFolder.getRoot().getAbsolutePath()
@@ -95,12 +106,9 @@ public class DbUtilsTest {
 
         byte[] fileId = "11".getBytes();
         FileBackup fileBackuped = new FileBackup();
-        fileBackuped.addReference(
-                11L,
-                11L,
-                11L,
-                11L,
-                "test_archive_id_11");
+        FileToTreat fileToTreat = new FileToTreat(11L, 11L);
+        fileBackuped.backupReference(amazonGlacierArchiveOperations, dbUtils, fileId,
+                fileToTreat, retention, vaultName);
         byte[] fileBackupVal = SerializationUtil.serialize(fileBackuped);
         dbUtils.writeFileBackup(fileId, fileBackupVal);
 

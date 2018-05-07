@@ -37,6 +37,8 @@ import java.util.concurrent.TimeUnit;
 // TODO add transactions to write in rocksdb and to delete (optimistic should be sufficient)
 
 // TODO: see to use one event loop for all treatment
+
+// TODO use proto to bck data in rocksdb instead of java serialized object
 // Each schedule will just submit a runnable in netty event loop https://netty.io/wiki/using-as-a-generic-library.html
 public class HibernatusAgent {
     private static final Logger logger = LoggerFactory.getLogger(ListFileExecutor.class);

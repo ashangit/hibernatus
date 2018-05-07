@@ -1,13 +1,22 @@
 package fr.bionf.hibernatus.agent.db;
 
+import fr.bionf.hibernatus.agent.glacier.AmazonGlacierArchiveOperations;
+import org.rocksdb.RocksDBException;
+
 import java.io.*;
 import java.util.*;
 
 public class FileBackup implements Serializable {
     public TreeMap<Long, AwsFile> references = new TreeMap<>();
 
-    public void addReference(long modificationTimestamp, long length, long backupTimestamp, long deleteTimestamp, String awsObject) {
-        references.put(backupTimestamp, new AwsFile(modificationTimestamp, length, backupTimestamp, deleteTimestamp, awsObject));
+    public void backupReference(AmazonGlacierArchiveOperations amazonGlacierArchiveOperations,
+                                DbUtils dbUtils, byte[] file, FileToTreat fileToTreat,
+                                long retention, String vaultName) throws IOException, RocksDBException {
+        long now = System.currentTimeMillis();
+        String archiveId = amazonGlacierArchiveOperations.upload(vaultName, new String(file));
+        dbUtils.writeFileBackup(file, SerializationUtil.serialize(this));
+        references.put(now, new AwsFile(fileToTreat.mtime, fileToTreat.length, now,
+                now + retention, archiveId));
     }
 
     public class AwsFile implements Serializable {
