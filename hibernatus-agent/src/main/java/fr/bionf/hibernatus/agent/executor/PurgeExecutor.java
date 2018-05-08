@@ -1,8 +1,11 @@
 package fr.bionf.hibernatus.agent.executor;
 
+import com.amazonaws.auth.profile.ProfileCredentialsProvider;
+import com.amazonaws.services.glacier.AmazonGlacier;
 import fr.bionf.hibernatus.agent.db.DbUtils;
 import fr.bionf.hibernatus.agent.db.FileBackup;
 import fr.bionf.hibernatus.agent.db.SerializationUtil;
+import fr.bionf.hibernatus.agent.glacier.AmazonGlacierArchiveOperations;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
 import org.slf4j.Logger;
@@ -15,9 +18,11 @@ public class PurgeExecutor implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(PurgeExecutor.class);
 
     private final DbUtils dbUtils;
+    private final AmazonGlacierArchiveOperations amazonGlacierArchiveOperations;
 
-    public PurgeExecutor(DbUtils dbUtils) {
+    public PurgeExecutor(DbUtils dbUtils, AmazonGlacier client, ProfileCredentialsProvider credentials, String vaultName) {
         this.dbUtils = dbUtils;
+        this.amazonGlacierArchiveOperations = new AmazonGlacierArchiveOperations(client, credentials, vaultName);
     }
 
     @Override
@@ -34,15 +39,7 @@ public class PurgeExecutor implements Runnable {
                     FileBackup.AwsFile awsFile = entry.getValue();
                     if (awsFile.deleteTimestamp < now) {
                         logger.info("Delete backup {} for file {}", awsFile.deleteTimestamp, new String(file));
-                        // TODO delete aws file
-
-                        fileBackup.references.remove(entry.getKey());
-
-                        if (fileBackup.references.size() == 0) {
-                            dbUtils.deleteFileBackup(file);
-                        } else {
-                            dbUtils.writeFileBackup(file, SerializationUtil.serialize(fileBackup));
-                        }
+                        fileBackup.deleteReference(amazonGlacierArchiveOperations, dbUtils, entry.getKey());
                     }
                 }
 

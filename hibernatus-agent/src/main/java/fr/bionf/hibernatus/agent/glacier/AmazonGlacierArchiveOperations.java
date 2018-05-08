@@ -19,10 +19,13 @@ import java.util.Date;
 public class AmazonGlacierArchiveOperations {
     private static final Logger logger = LoggerFactory.getLogger(AmazonGlacierArchiveOperations.class);
 
-    private static ArchiveTransferManager atm;
-    private static AmazonGlacier client;
+    private final ArchiveTransferManager atm;
+    private final AmazonGlacier client;
 
-    public AmazonGlacierArchiveOperations(AmazonGlacier client, AWSCredentialsProvider credentials) {
+    private final String vaultName;
+
+    public AmazonGlacierArchiveOperations(AmazonGlacier client, AWSCredentialsProvider credentials, String vaultName) {
+        this.vaultName = vaultName;
         this.client = client;
 
         AmazonGlacierSnsSqsOperations amazonGlacierSnsSqsOperations = new AmazonGlacierSnsSqsOperations(credentials);
@@ -36,7 +39,7 @@ public class AmazonGlacierArchiveOperations {
                 .build();
     }
 
-    public String upload(String vaultName, String archiveToUpload) throws FileNotFoundException {
+    public String upload(String archiveToUpload) throws FileNotFoundException {
         try {
             logger.debug("Upload {}", archiveToUpload);
             UploadResult result = atm.upload(vaultName, "my archive " + (new Date()), new File(archiveToUpload));
@@ -54,6 +57,17 @@ public class AmazonGlacierArchiveOperations {
                 .withArchiveId(archiveId));
 
         System.out.println("Deleted archive successfully.");
+    }
+
+    public void delete(String archiveId) {
+        try {
+            client.deleteArchive(new DeleteArchiveRequest()
+                    .withVaultName(vaultName)
+                    .withArchiveId(archiveId));
+        } catch (Exception e) {
+            logger.error("", e);
+            throw e;
+        }
     }
 
 }

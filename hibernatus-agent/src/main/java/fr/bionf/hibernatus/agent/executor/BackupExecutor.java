@@ -20,28 +20,25 @@ public class BackupExecutor implements Runnable {
 
     private final DbUtils dbUtils;
     private final AmazonGlacierArchiveOperations amazonGlacierArchiveOperations;
-    private final String vaultName;
     private final long retention;
 
-    public BackupExecutor(DbUtils dbUtils, AmazonGlacier client, ProfileCredentialsProvider credentials, String vaultName, long retention) {
+    public BackupExecutor(DbUtils dbUtils, AmazonGlacier client, ProfileCredentialsProvider credentials,
+                          String vaultName, long retention) {
         this.dbUtils = dbUtils;
-        this.amazonGlacierArchiveOperations = new AmazonGlacierArchiveOperations(client, credentials);
-        this.vaultName = vaultName;
+        this.amazonGlacierArchiveOperations = new AmazonGlacierArchiveOperations(client, credentials, vaultName);
         this.retention = TimeUnit.DAYS.toMillis(retention);
     }
 
     private void backup(byte[] file, FileToTreat fileToTreat, FileBackup fileBackuped) throws IOException, RocksDBException {
         logger.info("Backup file {}", new String(file));
         if (fileBackuped == null) {
-            fileBackuped = new FileBackup();
+            fileBackuped = new FileBackup(file);
         }
         fileBackuped.backupReference(
                 amazonGlacierArchiveOperations,
                 dbUtils,
-                file,
                 fileToTreat,
-                retention,
-                vaultName);
+                retention);
     }
 
     @Override

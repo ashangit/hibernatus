@@ -26,7 +26,6 @@ public class DbUtilsTest {
     private File backupFolder;
 
     private long retention = TimeUnit.DAYS.toMillis(1L);
-    private String vaultName = "exempleVault";
 
     private DbUtils dbUtils;
     private AmazonGlacierArchiveOperations amazonGlacierArchiveOperations;
@@ -36,9 +35,8 @@ public class DbUtilsTest {
             byte[] fileId = String.valueOf(i).getBytes();
             FileToTreat fileToTreat = new FileToTreat(i, i);
             dbUtils.writeFileToTreat(fileId, SerializationUtil.serialize(fileToTreat));
-            FileBackup fileBackuped = new FileBackup();
-            fileBackuped.backupReference(amazonGlacierArchiveOperations, dbUtils, fileId,
-                    fileToTreat, retention, vaultName);
+            FileBackup fileBackuped = new FileBackup(fileId);
+            fileBackuped.backupReference(amazonGlacierArchiveOperations, dbUtils, fileToTreat, retention);
             dbUtils.writeFileBackup(fileId, SerializationUtil.serialize(fileBackuped));
         }
     }
@@ -105,10 +103,9 @@ public class DbUtilsTest {
         assertEquals(11, nbKey);
 
         byte[] fileId = "11".getBytes();
-        FileBackup fileBackuped = new FileBackup();
+        FileBackup fileBackuped = new FileBackup(fileId);
         FileToTreat fileToTreat = new FileToTreat(11L, 11L);
-        fileBackuped.backupReference(amazonGlacierArchiveOperations, dbUtils, fileId,
-                fileToTreat, retention, vaultName);
+        fileBackuped.backupReference(amazonGlacierArchiveOperations, dbUtils, fileToTreat, retention);
         byte[] fileBackupVal = SerializationUtil.serialize(fileBackuped);
         dbUtils.writeFileBackup(fileId, fileBackupVal);
 

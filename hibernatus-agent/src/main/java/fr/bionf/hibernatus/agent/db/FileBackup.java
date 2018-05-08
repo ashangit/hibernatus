@@ -8,15 +8,38 @@ import java.util.*;
 
 public class FileBackup implements Serializable {
     public TreeMap<Long, AwsFile> references = new TreeMap<>();
+    private final byte[] file;
+
+    public FileBackup(byte[] file) {
+        this.file = file;
+    }
 
     public void backupReference(AmazonGlacierArchiveOperations amazonGlacierArchiveOperations,
-                                DbUtils dbUtils, byte[] file, FileToTreat fileToTreat,
-                                long retention, String vaultName) throws IOException, RocksDBException {
+                                DbUtils dbUtils, FileToTreat fileToTreat, long retention)
+            throws IOException, RocksDBException {
         long now = System.currentTimeMillis();
-        String archiveId = amazonGlacierArchiveOperations.upload(vaultName, new String(file));
+        String archiveId = amazonGlacierArchiveOperations.upload(new String(file));
         dbUtils.writeFileBackup(file, SerializationUtil.serialize(this));
         references.put(now, new AwsFile(fileToTreat.mtime, fileToTreat.length, now,
                 now + retention, archiveId));
+    }
+
+    public void deleteReference(AmazonGlacierArchiveOperations amazonGlacierArchiveOperations,
+                                DbUtils dbUtils, long awsFileKey) throws IOException, RocksDBException {
+        amazonGlacierArchiveOperations.delete(references.get(awsFileKey).awsObject);
+        references.remove(awsFileKey);
+
+        if (references.isEmpty()) {
+            dbUtils.deleteFileBackup(file);
+        } else {
+            dbUtils.writeFileBackup(file, SerializationUtil.serialize(this));
+        }
+
+    }
+
+    // TODO add purge references here
+    public void purge() {
+
     }
 
     public class AwsFile implements Serializable {

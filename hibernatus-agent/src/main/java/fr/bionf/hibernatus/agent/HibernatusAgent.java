@@ -97,7 +97,8 @@ public class HibernatusAgent {
 
     private void initPurgeScheduler() {
         long interval = ((Number) config.get("purge.interval")).longValue();
-        Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(new PurgeExecutor(dbUtils),
+        Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(
+                new PurgeExecutor(dbUtils, client, credentials, vaultName),
                 0, interval, TimeUnit.SECONDS);
     }
 

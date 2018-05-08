@@ -10,40 +10,59 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class FileBackupTest {
+    private byte[] file = "/tmp/testfile".getBytes();
+    private String archiveId = "archive_to_delete";
     private FileBackup fileBackup;
 
     private AmazonGlacierArchiveOperations amazonGlacierArchiveOperations;
     private DbUtils dbUtils;
 
     @Before
-    public void setUp() {
-        fileBackup = new FileBackup();
+    public void setUp() throws IOException, RocksDBException, InterruptedException {
+        fileBackup = new FileBackup(file);
 
         amazonGlacierArchiveOperations = mock(AmazonGlacierArchiveOperations.class);
+        when(amazonGlacierArchiveOperations.upload(new String(file))).thenReturn(archiveId);
         dbUtils = mock(DbUtils.class);
+
+        FileToTreat fileToTreat = new FileToTreat(1L, 1L);
+        long retention = TimeUnit.DAYS.toMillis(1L);
+        fileBackup.backupReference(amazonGlacierArchiveOperations, dbUtils, fileToTreat, retention);
+        Thread.sleep(10L);
+        fileBackup.backupReference(amazonGlacierArchiveOperations, dbUtils, fileToTreat, retention);
     }
 
     @Test
     public void should_backup_new_file() throws IOException, RocksDBException {
-        byte[] file = "/tmp/testfile".getBytes();
+        verify(dbUtils, times(2)).writeFileBackup(any(byte[].class), any(byte[].class));
+
         FileToTreat fileToTreat = new FileToTreat(1L, 1L);
         long retention = TimeUnit.DAYS.toMillis(1L);
-        String vaultName = "exempleVault";
         String archiveId = "archive_id";
 
-        when(amazonGlacierArchiveOperations.upload(vaultName, new String(file))).thenReturn("archive_id");
+        byte[] file = "/tmp/testfile.tmp".getBytes();
+        when(amazonGlacierArchiveOperations.upload(new String(file))).thenReturn("archive_id");
 
-        fileBackup.backupReference(amazonGlacierArchiveOperations, dbUtils, file,
-                fileToTreat, retention, vaultName);
+        FileBackup fileBackup = new FileBackup(file);
+        fileBackup.backupReference(amazonGlacierArchiveOperations, dbUtils, fileToTreat, retention);
 
         assertEquals(archiveId, fileBackup.references.firstEntry().getValue().awsObject);
 
-        verify(amazonGlacierArchiveOperations).upload(vaultName, new String(file));
-        verify(dbUtils).writeFileBackup(any(byte[].class), any(byte[].class));
+        verify(amazonGlacierArchiveOperations).upload(new String(file));
+        verify(dbUtils, times(3)).writeFileBackup(any(byte[].class), any(byte[].class));
+    }
+
+    @Test
+    public void should_remove_file_in_archive() throws IOException, RocksDBException {
+        verify(dbUtils, times(2)).writeFileBackup(any(byte[].class), any(byte[].class));
+        fileBackup.deleteReference(amazonGlacierArchiveOperations, dbUtils, fileBackup.references.firstEntry().getKey());
+        verify(amazonGlacierArchiveOperations).delete(archiveId);
+        verify(dbUtils, times(3)).writeFileBackup(any(byte[].class), any(byte[].class));
+
+        fileBackup.deleteReference(amazonGlacierArchiveOperations, dbUtils, fileBackup.references.firstEntry().getKey());
+        verify(dbUtils).deleteFileBackup(file);
     }
 }
