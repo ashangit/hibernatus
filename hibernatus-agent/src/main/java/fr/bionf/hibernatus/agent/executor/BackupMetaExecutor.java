@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 
 import static fr.bionf.hibernatus.agent.conf.AgentConfig.AGENT_METADATA_PATH_KEY;
 import static fr.bionf.hibernatus.agent.conf.Constants.BACKUP_PREFIX_NAME;
@@ -24,8 +25,8 @@ public class BackupMetaExecutor implements Runnable {
         AgentConfig agentConfig = new AgentConfig();
         this.dbUtils = dbUtils;
         this.metaPath = agentConfig.getString(AGENT_METADATA_PATH_KEY);
-        this.tarFolder = new TarFolder(dbUtils.getBackupPath(), metaPath + File.separator + BACKUP_PREFIX_NAME
-                + System.currentTimeMillis() + ".tbz2");
+        this.tarFolder = new TarFolder(dbUtils.getBackupPath(), metaPath + File.separator + BACKUP_PREFIX_NAME +
+                InetAddress.getLocalHost().getHostName() + ".tbz2");
     }
 
     @Override

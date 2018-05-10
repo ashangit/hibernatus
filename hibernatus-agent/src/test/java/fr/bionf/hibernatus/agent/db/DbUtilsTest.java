@@ -1,7 +1,9 @@
 package fr.bionf.hibernatus.agent.db;
 
 import fr.bionf.hibernatus.agent.conf.Constants;
+import fr.bionf.hibernatus.agent.executor.BackupMetaExecutor;
 import fr.bionf.hibernatus.agent.glacier.AmazonGlacierArchiveOperations;
+import fr.bionf.hibernatus.agent.utils.TarFolder;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -11,9 +13,11 @@ import org.rocksdb.RocksIterator;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.nio.file.Files;
 import java.util.concurrent.TimeUnit;
 
+import static fr.bionf.hibernatus.agent.conf.Constants.BACKUP_PREFIX_NAME;
 import static org.junit.Assert.*;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
@@ -58,14 +62,31 @@ public class DbUtilsTest {
     }
 
     @Test
-    public void dbAndBackupFolderHaveBeenCreated() {
+    public void should_create_db_and_backup_folder() {
         assertTrue(Files.isDirectory(rootDbFolder.getRoot().toPath()));
         assertTrue(Files.isDirectory(dbFolder.toPath()));
         assertTrue(Files.isDirectory(backupFolder.toPath()));
     }
 
     @Test
-    public void shouldCreateAFileToTreatAndIterateAndDelete() throws IOException, RocksDBException, ClassNotFoundException {
+    public void should_restore_db_from_tarbz_backup() throws IOException, RocksDBException, ClassNotFoundException {
+        dbUtils.backup();
+
+        TemporaryFolder rootRestoreFolder = new TemporaryFolder();
+        rootRestoreFolder.create();
+        DbUtils dbRestoreUtils = new DbUtils(rootRestoreFolder.getRoot().getAbsolutePath());
+
+        new TarFolder(backupFolder.getAbsolutePath(), rootRestoreFolder.getRoot().getAbsolutePath()
+                + File.separator + BACKUP_PREFIX_NAME + InetAddress.getLocalHost().getHostName() + ".tbz2").compress();
+
+        dbRestoreUtils.open();
+        assertNull(dbRestoreUtils.getFileToTreat("15".getBytes()));
+        assertNotNull(dbRestoreUtils.getFileToTreat("2".getBytes()));
+
+    }
+
+    @Test
+    public void should_create_fileToTreat_iterate_and_delete() throws IOException, RocksDBException, ClassNotFoundException {
         RocksIterator iterator = dbUtils.iteratorFileToTreat();
         int nbKey = 0;
         for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
@@ -94,7 +115,7 @@ public class DbUtilsTest {
     }
 
     @Test
-    public void shouldCreateAFileBackupAndIterateAndDelete() throws IOException, RocksDBException, ClassNotFoundException {
+    public void should_create_fileBackup_iterate_and_delete() throws IOException, RocksDBException, ClassNotFoundException {
         RocksIterator iterator = dbUtils.iteratorFileBackup();
         int nbKey = 0;
         for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {

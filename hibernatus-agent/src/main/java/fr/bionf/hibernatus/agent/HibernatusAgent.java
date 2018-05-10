@@ -34,13 +34,9 @@ import static fr.bionf.hibernatus.agent.conf.Constants.INTERVAL_BACKUP_META;
 // TODO: create client to list, restore, delete
 // TODO: do admin/maintenance operation on rocksDB
 // TODO: backup rocksDB in AWS
-//              1. backup db with rocksdb mechanism
-//              2. tgz bck folders
 //              3. send tgz to S3 (we must keep latest-2, latest-1 and latest in S3
 // TODO: restore rocksDB from S3
 //              1. Et db initialisation if no db available locally check on S3 in latest or latest-1 or latest-2 is available
-//              2. if not create empty db locally
-//              3. if yes get latest and uncompress in db folder then start db
 // TODO: rocksDB read options (compression...)
 // TODO: add tests
 

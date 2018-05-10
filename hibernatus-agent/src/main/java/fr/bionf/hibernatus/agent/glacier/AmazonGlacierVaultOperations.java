@@ -18,12 +18,14 @@ import java.io.*;
 import java.net.UnknownHostException;
 import java.util.List;
 
+import static fr.bionf.hibernatus.agent.conf.AgentConfig.AGENT_METADATA_PATH_KEY;
+
 
 public class AmazonGlacierVaultOperations {
     private static final Logger logger = LoggerFactory.getLogger(AmazonGlacierVaultOperations.class);
 
     private final AgentConfig agentConfig = new AgentConfig();
-    private final String vaultName = agentConfig.getVaultName();
+    private final String vaultName = agentConfig.getString(AGENT_METADATA_PATH_KEY);
     private final AmazonGlacierSnsSqsOperations amazonGlacierSNSOperations;
 
     private AmazonGlacier client;

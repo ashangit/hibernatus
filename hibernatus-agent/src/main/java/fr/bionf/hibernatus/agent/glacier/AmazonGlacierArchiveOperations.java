@@ -18,6 +18,8 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.Date;
 
+import static fr.bionf.hibernatus.agent.conf.AgentConfig.AGENT_METADATA_PATH_KEY;
+
 
 public class AmazonGlacierArchiveOperations {
     private static final Logger logger = LoggerFactory.getLogger(AmazonGlacierArchiveOperations.class);
@@ -26,7 +28,7 @@ public class AmazonGlacierArchiveOperations {
     private final AmazonGlacier client;
 
     private final AgentConfig agentConfig = new AgentConfig();
-    private final String vaultName = agentConfig.getVaultName();
+    private final String vaultName = agentConfig.getString(AGENT_METADATA_PATH_KEY);
 
     public AmazonGlacierArchiveOperations(AmazonGlacier client, AWSCredentialsProvider credentials) throws IOException {
         this.client = client;
