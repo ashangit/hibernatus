@@ -24,6 +24,7 @@ public class AgentConfig {
     public static final int AGENT_BACKUP_RETENTION_DEFAULT = 30;
     public static final String AGENT_PURGE_INTERVAL_KEY = "purge.interval";
     public static final long AGENT_PURGE_INTERVAL_DEFAULT = 60 * 60 * 24;
+    public static final String AGENT_BACKUP_VAULT_NAME = "backup.vault.name";
 
     public AgentConfig() throws IOException {
         this("/config.yml");
@@ -40,10 +41,11 @@ public class AgentConfig {
         setConfigurations();
     }
 
-    void setConfigurations() {
+    void setConfigurations() throws UnknownHostException {
         setConf(AGENT_BACKUP_INTERVAL_KEY, AGENT_BACKUP_INTERVAL_DEFAULT);
         setConf(AGENT_BACKUP_RETENTION_KEY, AGENT_BACKUP_RETENTION_DEFAULT);
         setConf(AGENT_PURGE_INTERVAL_KEY, AGENT_PURGE_INTERVAL_DEFAULT);
+        setConf(AGENT_BACKUP_VAULT_NAME, this.getVaultName());
     }
 
     void setConf(String key, Object value) {
@@ -68,7 +70,7 @@ public class AgentConfig {
         return (ArrayList) Configuration.get(key);
     }
 
-    public static String getVaultName() throws UnknownHostException {
+    public String getVaultName() throws UnknownHostException {
         return "hibernatus-" + InetAddress.getLocalHost().getHostName();
     }
 

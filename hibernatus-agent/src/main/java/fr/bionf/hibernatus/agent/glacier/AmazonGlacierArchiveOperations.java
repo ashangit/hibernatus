@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.Date;
 
@@ -24,9 +25,10 @@ public class AmazonGlacierArchiveOperations {
     private final ArchiveTransferManager atm;
     private final AmazonGlacier client;
 
-    private final String vaultName = AgentConfig.getVaultName();
+    private final AgentConfig agentConfig = new AgentConfig();
+    private final String vaultName = agentConfig.getVaultName();
 
-    public AmazonGlacierArchiveOperations(AmazonGlacier client, AWSCredentialsProvider credentials) throws UnknownHostException {
+    public AmazonGlacierArchiveOperations(AmazonGlacier client, AWSCredentialsProvider credentials) throws IOException {
         this.client = client;
 
         AmazonGlacierSnsSqsOperations amazonGlacierSnsSqsOperations = new AmazonGlacierSnsSqsOperations(credentials);
@@ -52,7 +54,7 @@ public class AmazonGlacierArchiveOperations {
         }
     }
 
-    public void deleteArchive(String vaultName, String archiveId) {
+    public void deleteArchive(String archiveId) {
         client.deleteArchive(new DeleteArchiveRequest()
                 .withVaultName(vaultName)
                 .withArchiveId(archiveId));

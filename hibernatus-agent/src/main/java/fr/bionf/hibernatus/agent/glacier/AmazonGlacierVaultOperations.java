@@ -22,13 +22,14 @@ import java.util.List;
 public class AmazonGlacierVaultOperations {
     private static final Logger logger = LoggerFactory.getLogger(AmazonGlacierVaultOperations.class);
 
-    private final String vaultName = AgentConfig.getVaultName();
+    private final AgentConfig agentConfig = new AgentConfig();
+    private final String vaultName = agentConfig.getVaultName();
     private final AmazonGlacierSnsSqsOperations amazonGlacierSNSOperations;
 
     private AmazonGlacier client;
 
 
-    public AmazonGlacierVaultOperations(AmazonGlacier client, AWSCredentialsProvider credentials) throws UnknownHostException {
+    public AmazonGlacierVaultOperations(AmazonGlacier client, AWSCredentialsProvider credentials) throws IOException {
         this.client = client;
         amazonGlacierSNSOperations = new AmazonGlacierSnsSqsOperations(credentials);
     }

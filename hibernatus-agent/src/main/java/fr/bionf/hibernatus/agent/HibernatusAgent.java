@@ -55,7 +55,7 @@ public class HibernatusAgent {
     private HibernatusAgent() throws IOException {
     }
 
-    private void initVault() throws UnknownHostException {
+    private void initVault() throws IOException {
         client = AmazonGlacierClientBuilder.standard()
                 .withCredentials(credentials)
                 .withRegion(Regions.EU_WEST_3)
