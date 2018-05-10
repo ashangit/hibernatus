@@ -6,6 +6,7 @@ import com.amazonaws.services.glacier.AmazonGlacier;
 import com.amazonaws.services.glacier.AmazonGlacierClientBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import fr.bionf.hibernatus.agent.conf.AgentConfig;
 import fr.bionf.hibernatus.agent.executor.BackupExecutor;
 import fr.bionf.hibernatus.agent.executor.ListFileExecutor;
 import fr.bionf.hibernatus.agent.executor.PurgeExecutor;
@@ -24,6 +25,8 @@ import java.util.HashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static fr.bionf.hibernatus.agent.conf.AgentConfig.*;
+
 // TODO: create client to list, restore, delete
 // TODO: do admin/maintenance operation on rocksDB
 // TODO: backup rocksDB in AWS
@@ -39,21 +42,20 @@ import java.util.concurrent.TimeUnit;
 // TODO: see to use one event loop for all treatment
 
 // TODO use proto to bck data in rocksdb instead of java serialized object
+
 // Each schedule will just submit a runnable in netty event loop https://netty.io/wiki/using-as-a-generic-library.html
 public class HibernatusAgent {
-    private static final Logger logger = LoggerFactory.getLogger(ListFileExecutor.class);
+    private static final Logger logger = LoggerFactory.getLogger(HibernatusAgent.class);
     // Use .aws/credentials file with hibernatus profile
     private final ProfileCredentialsProvider credentials = new ProfileCredentialsProvider("hibernatus");
-    private final String vaultName = "hibernatus-" + InetAddress.getLocalHost().getHostName();
-    private final HashMap config;
+    private final AgentConfig agentConfig = new AgentConfig();
     private static AmazonGlacier client;
     private DbUtils dbUtils;
 
-    private HibernatusAgent(HashMap config) throws UnknownHostException {
-        this.config = config;
+    private HibernatusAgent() throws IOException {
     }
 
-    private void initVault() {
+    private void initVault() throws UnknownHostException {
         client = AmazonGlacierClientBuilder.standard()
                 .withCredentials(credentials)
                 .withRegion(Regions.EU_WEST_3)
@@ -61,7 +63,7 @@ public class HibernatusAgent {
 
         try {
             AmazonGlacierVaultOperations amazonGlacierVaultOperations = new AmazonGlacierVaultOperations(client, credentials);
-            amazonGlacierVaultOperations.initVault(vaultName);
+            amazonGlacierVaultOperations.initVault();
         } catch (Exception e) {
             logger.error("Vault operation failed: ", e);
             throw e;
@@ -69,7 +71,7 @@ public class HibernatusAgent {
     }
 
     private void initMetadata() throws IOException, RocksDBException {
-        String dbPath = (String) config.get("metadata.path");
+        String dbPath = agentConfig.getString(AGENT_METADATA_PATH_KEY);
         dbUtils = new DbUtils(dbPath);
         try {
             dbUtils.open();
@@ -80,25 +82,23 @@ public class HibernatusAgent {
         }
     }
 
-    private void initListScheduler() {
-        long interval = ((Number) config.get("backup.interval")).longValue();
-        ArrayList<String> folders = (ArrayList<String>) config.get("backup.folders");
-        Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(new ListFileExecutor(dbUtils, folders),
+    private void initListScheduler() throws IOException {
+        long interval = agentConfig.getLong(AGENT_BACKUP_INTERVAL_KEY);
+        Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(new ListFileExecutor(dbUtils),
                 0, interval, TimeUnit.SECONDS);
     }
 
-    private void initBackupScheduler() {
+    private void initBackupScheduler() throws IOException {
         long INTERVAL_BACKUP = 5;
-        int retention = (int) config.get("backup.retention");
         Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(
-                new BackupExecutor(dbUtils, client, credentials, vaultName, retention),
+                new BackupExecutor(dbUtils, client, credentials),
                 0, INTERVAL_BACKUP, TimeUnit.SECONDS);
     }
 
-    private void initPurgeScheduler() {
-        long interval = ((Number) config.get("purge.interval")).longValue();
+    private void initPurgeScheduler() throws IOException {
+        long interval = agentConfig.getLong(AGENT_PURGE_INTERVAL_KEY);
         Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(
-                new PurgeExecutor(dbUtils, client, credentials, vaultName),
+                new PurgeExecutor(dbUtils, client, credentials),
                 0, interval, TimeUnit.SECONDS);
     }
 
@@ -107,17 +107,7 @@ public class HibernatusAgent {
     }
 
     public static void main(String[] args) throws Exception {
-        // Load config
-        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-        HashMap config = new HashMap();
-        try (InputStream streamPropFilePath = HibernatusAgent.class.getResourceAsStream("/config.yml")) {
-            config.putAll(mapper.readValue(streamPropFilePath, HashMap.class));
-        } catch (Exception e) {
-            logger.error("Issue reading config file");
-            System.exit(1);
-        }
-
-        HibernatusAgent hServer = new HibernatusAgent(config);
+        HibernatusAgent hServer = new HibernatusAgent();
 
         // Init bck threads
         try {

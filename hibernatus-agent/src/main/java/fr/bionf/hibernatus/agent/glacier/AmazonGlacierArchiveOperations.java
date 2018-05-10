@@ -8,11 +8,13 @@ import com.amazonaws.services.glacier.transfer.ArchiveTransferManagerBuilder;
 import com.amazonaws.services.glacier.transfer.UploadResult;
 import com.amazonaws.services.sns.AmazonSNS;
 import com.amazonaws.services.sqs.AmazonSQS;
+import fr.bionf.hibernatus.agent.conf.AgentConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.net.UnknownHostException;
 import java.util.Date;
 
 
@@ -22,10 +24,9 @@ public class AmazonGlacierArchiveOperations {
     private final ArchiveTransferManager atm;
     private final AmazonGlacier client;
 
-    private final String vaultName;
+    private final String vaultName = AgentConfig.getVaultName();
 
-    public AmazonGlacierArchiveOperations(AmazonGlacier client, AWSCredentialsProvider credentials, String vaultName) {
-        this.vaultName = vaultName;
+    public AmazonGlacierArchiveOperations(AmazonGlacier client, AWSCredentialsProvider credentials) throws UnknownHostException {
         this.client = client;
 
         AmazonGlacierSnsSqsOperations amazonGlacierSnsSqsOperations = new AmazonGlacierSnsSqsOperations(credentials);

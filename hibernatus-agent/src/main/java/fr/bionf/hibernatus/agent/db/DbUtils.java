@@ -1,6 +1,6 @@
 package fr.bionf.hibernatus.agent.db;
 
-import fr.bionf.hibernatus.agent.Constants;
+import fr.bionf.hibernatus.agent.conf.Constants;
 import fr.bionf.hibernatus.agent.executor.ListFileExecutor;
 import org.rocksdb.*;
 import org.slf4j.Logger;

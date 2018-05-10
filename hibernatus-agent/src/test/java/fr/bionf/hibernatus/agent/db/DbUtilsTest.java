@@ -1,6 +1,6 @@
 package fr.bionf.hibernatus.agent.db;
 
-import fr.bionf.hibernatus.agent.Constants;
+import fr.bionf.hibernatus.agent.conf.Constants;
 import fr.bionf.hibernatus.agent.glacier.AmazonGlacierArchiveOperations;
 import org.junit.Before;
 import org.junit.Rule;

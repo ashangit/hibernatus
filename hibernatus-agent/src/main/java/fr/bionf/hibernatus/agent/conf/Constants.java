@@ -1,4 +1,4 @@
-package fr.bionf.hibernatus.agent;
+package fr.bionf.hibernatus.agent.conf;
 
 public class Constants {
     /* Hidden constructor */

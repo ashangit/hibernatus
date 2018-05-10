@@ -2,6 +2,7 @@ package fr.bionf.hibernatus.agent.executor;
 
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.glacier.AmazonGlacier;
+import fr.bionf.hibernatus.agent.conf.AgentConfig;
 import fr.bionf.hibernatus.agent.db.DbUtils;
 import fr.bionf.hibernatus.agent.db.FileBackup;
 import fr.bionf.hibernatus.agent.db.FileToTreat;
@@ -15,6 +16,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import static fr.bionf.hibernatus.agent.conf.AgentConfig.AGENT_BACKUP_RETENTION_KEY;
+
 public class BackupExecutor implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(BackupExecutor.class);
 
@@ -22,11 +25,11 @@ public class BackupExecutor implements Runnable {
     private final AmazonGlacierArchiveOperations amazonGlacierArchiveOperations;
     private final long retention;
 
-    public BackupExecutor(DbUtils dbUtils, AmazonGlacier client, ProfileCredentialsProvider credentials,
-                          String vaultName, long retention) {
+    public BackupExecutor(DbUtils dbUtils, AmazonGlacier client, ProfileCredentialsProvider credentials) throws IOException {
         this.dbUtils = dbUtils;
-        this.amazonGlacierArchiveOperations = new AmazonGlacierArchiveOperations(client, credentials, vaultName);
-        this.retention = TimeUnit.DAYS.toMillis(retention);
+        this.amazonGlacierArchiveOperations = new AmazonGlacierArchiveOperations(client, credentials);
+        AgentConfig agentConfig = new AgentConfig();
+        this.retention = TimeUnit.DAYS.toMillis(agentConfig.getLong(AGENT_BACKUP_RETENTION_KEY));
     }
 
     private void backup(byte[] file, FileToTreat fileToTreat, FileBackup fileBackuped) throws IOException, RocksDBException {
@@ -62,7 +65,7 @@ public class BackupExecutor implements Runnable {
                     // Check if file has been modified
                     FileBackup fileBackuped = (FileBackup) SerializationUtil.deserialize(value);
                     FileBackup.AwsFile awsFile = fileBackuped.references.get(fileBackuped.references.lastKey());
-                    if (!awsFile.modificationTimestamp.equals(fileToTreat.mtime) || !awsFile.length.equals(fileToTreat.length)) {
+                    if (!awsFile.lastModified.equals(fileToTreat.mtime) || !awsFile.length.equals(fileToTreat.length)) {
                         backup(file, fileToTreat, fileBackuped);
                     }
                 }

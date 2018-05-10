@@ -10,32 +10,35 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fr.bionf.hibernatus.agent.conf.AgentConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.net.UnknownHostException;
 import java.util.List;
 
 
 public class AmazonGlacierVaultOperations {
     private static final Logger logger = LoggerFactory.getLogger(AmazonGlacierVaultOperations.class);
 
-    private static AmazonGlacierSnsSqsOperations amazonGlacierSNSOperations;
+    private final String vaultName = AgentConfig.getVaultName();
+    private final AmazonGlacierSnsSqsOperations amazonGlacierSNSOperations;
 
     private AmazonGlacier client;
 
-    public AmazonGlacierVaultOperations(AmazonGlacier client, AWSCredentialsProvider credentials) {
-        this.client = client;
 
+    public AmazonGlacierVaultOperations(AmazonGlacier client, AWSCredentialsProvider credentials) throws UnknownHostException {
+        this.client = client;
         amazonGlacierSNSOperations = new AmazonGlacierSnsSqsOperations(credentials);
     }
 
-    public void initVault(String vaultName) {
-        createVault(vaultName);
-        setVaultNotifications(vaultName);
+    public void initVault() {
+        createVault();
+        setVaultNotifications();
     }
 
-    private void createVault(String vaultName) {
+    private void createVault() {
         CreateVaultRequest createVaultRequest = new CreateVaultRequest()
                 .withVaultName(vaultName);
         CreateVaultResult createVaultResult = client.createVault(createVaultRequest);
@@ -43,7 +46,7 @@ public class AmazonGlacierVaultOperations {
         logger.info("Created vault successfully: " + createVaultResult.getLocation());
     }
 
-    private void setVaultNotifications(String vaultName) {
+    private void setVaultNotifications() {
         String snsTopicName = vaultName + "-sns";
         amazonGlacierSNSOperations.createSNS(snsTopicName);
 
@@ -59,7 +62,7 @@ public class AmazonGlacierVaultOperations {
         logger.info("Notification configured for vault: " + vaultName);
     }
 
-    public void getVaultNotifications(String vaultName) {
+    public void getVaultNotifications() {
         VaultNotificationConfig notificationConfig = null;
         GetVaultNotificationsRequest request = new GetVaultNotificationsRequest()
                 .withVaultName(vaultName);
@@ -72,7 +75,7 @@ public class AmazonGlacierVaultOperations {
         logger.info("Events: " + notificationConfig.getEvents());
     }
 
-    public void describeVault(String vaultName) {
+    public void describeVault() {
         DescribeVaultRequest describeVaultRequest = new DescribeVaultRequest()
                 .withVaultName(vaultName);
         DescribeVaultResult describeVaultResult = client.describeVault(describeVaultRequest);
@@ -104,7 +107,7 @@ public class AmazonGlacierVaultOperations {
         }
     }
 
-    public void deleteVault(String vaultName) {
+    public void deleteVault() {
         amazonGlacierSNSOperations.cleanUp();
         DeleteVaultRequest request = new DeleteVaultRequest()
                 .withVaultName(vaultName);
@@ -112,14 +115,14 @@ public class AmazonGlacierVaultOperations {
         logger.info("Deleted vault: " + vaultName);
     }
 
-    public void downloadInventory(String vaultName) throws Exception {
+    public void downloadInventory() throws Exception {
         String sqsQueueName = vaultName + "-sqs";
         amazonGlacierSNSOperations.setupSQS(sqsQueueName);
 
         String snsTopicName = vaultName + "-sns";
         amazonGlacierSNSOperations.setupSNS();
 
-        String jobId = initiateJobRequest(vaultName);
+        String jobId = initiateJobRequest();
         logger.info("Jobid = " + jobId);
 
         Boolean success = waitForJobToComplete(jobId, amazonGlacierSNSOperations.sqsQueueURL);
@@ -127,12 +130,12 @@ public class AmazonGlacierVaultOperations {
             throw new Exception("Job did not complete successfully.");
         }
 
-        downloadJobOutput(jobId, vaultName);
+        downloadJobOutput(jobId);
 
         amazonGlacierSNSOperations.cleanUp();
     }
 
-    private String initiateJobRequest(String vaultName) {
+    private String initiateJobRequest() {
 
         JobParameters jobParameters = new JobParameters()
                 .withType("inventory-retrieval")
@@ -184,7 +187,7 @@ public class AmazonGlacierVaultOperations {
         return (jobSuccessful);
     }
 
-    private void downloadJobOutput(String jobId, String vaultName) throws IOException {
+    private void downloadJobOutput(String jobId) throws IOException {
 
         GetJobOutputRequest getJobOutputRequest = new GetJobOutputRequest()
                 .withVaultName(vaultName)

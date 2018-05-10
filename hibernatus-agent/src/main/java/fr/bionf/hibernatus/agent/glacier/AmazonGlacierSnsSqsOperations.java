@@ -23,12 +23,12 @@ import java.util.Map;
 class AmazonGlacierSnsSqsOperations {
     private static final Logger logger = LoggerFactory.getLogger(AmazonGlacierSnsSqsOperations.class);
 
-    private static String sqsQueueARN;
-    static String sqsQueueURL;
-    static String snsTopicARN;
-    private static String snsSubscriptionARN;
-    static AmazonSQS sqsClient;
-    static AmazonSNS snsClient;
+    private String sqsQueueARN;
+    String sqsQueueURL;
+    String snsTopicARN;
+    private String snsSubscriptionARN;
+    AmazonSQS sqsClient;
+    AmazonSNS snsClient;
 
     AmazonGlacierSnsSqsOperations(AWSCredentialsProvider credentials) {
         sqsClient = AmazonSQSClientBuilder.standard()

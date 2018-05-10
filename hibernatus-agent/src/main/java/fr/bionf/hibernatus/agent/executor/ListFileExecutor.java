@@ -1,5 +1,6 @@
 package fr.bionf.hibernatus.agent.executor;
 
+import fr.bionf.hibernatus.agent.conf.AgentConfig;
 import fr.bionf.hibernatus.agent.db.DbUtils;
 import fr.bionf.hibernatus.agent.db.FileToTreat;
 import fr.bionf.hibernatus.agent.db.SerializationUtil;
@@ -17,6 +18,8 @@ import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static fr.bionf.hibernatus.agent.conf.AgentConfig.AGENT_BACKUP_FOLDERS_KEY;
+
 public class ListFileExecutor implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(ListFileExecutor.class);
 
@@ -24,9 +27,11 @@ public class ListFileExecutor implements Runnable {
     private final DbUtils dbUtils;
     private final ArrayList<String> folders;
 
-    public ListFileExecutor(DbUtils dbUtils, ArrayList<String> folders) {
+    public ListFileExecutor(DbUtils dbUtils) throws IOException {
+
+        AgentConfig agentConfig = new AgentConfig();
         this.dbUtils = dbUtils;
-        this.folders = folders;
+        this.folders = agentConfig.getArray(AGENT_BACKUP_FOLDERS_KEY);
     }
 
     @Override
