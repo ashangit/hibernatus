@@ -21,7 +21,7 @@ public class AgentConfig {
     public static final String AGENT_BACKUP_INTERVAL_KEY = "backup.interval";
     public static final long AGENT_BACKUP_INTERVAL_DEFAULT = 60 * 60 * 24;
     public static final String AGENT_BACKUP_RETENTION_KEY = "backup.retention";
-    public static final int AGENT_BACKUP_RETENTION_DEFAULT = 30;
+    public static final int AGENT_BACKUP_RETENTION_DEFAULT = 90; // This is the min number of days in glacier
     public static final String AGENT_PURGE_INTERVAL_KEY = "purge.interval";
     public static final long AGENT_PURGE_INTERVAL_DEFAULT = 60 * 60 * 24;
     public static final String AGENT_BACKUP_VAULT_NAME = "backup.vault.name";
@@ -59,7 +59,7 @@ public class AgentConfig {
     }
 
     public long getLong(String key) {
-        return (long) Configuration.get(key);
+        return ((Number) Configuration.get(key)).longValue();
     }
 
     public int getInt(String key) {

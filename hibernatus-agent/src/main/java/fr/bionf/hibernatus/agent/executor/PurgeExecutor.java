@@ -33,7 +33,7 @@ public class PurgeExecutor implements Runnable {
     @Override
     public void run() {
         long now = System.currentTimeMillis();
-        logger.info("Start delete old backup");
+        logger.info("Purge old backup");
         RocksIterator iterator = dbUtils.iteratorFileBackup();
         // Iterate on file to backup
         for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
@@ -44,6 +44,6 @@ public class PurgeExecutor implements Runnable {
                 logger.error("", e);
             }
         }
-        logger.info("End delete old backup");
+        logger.debug("End delete old backup");
     }
 }

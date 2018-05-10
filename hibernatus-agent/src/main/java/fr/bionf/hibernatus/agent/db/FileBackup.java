@@ -22,9 +22,9 @@ public class FileBackup implements Serializable {
             throws IOException, RocksDBException {
         long now = System.currentTimeMillis();
         String archiveId = amazonGlacierArchiveOperations.upload(new String(file));
-        dbUtils.writeFileBackup(file, SerializationUtil.serialize(this));
         references.put(now, new AwsFile(fileToTreat.mtime, fileToTreat.length, now,
                 now + retention, archiveId));
+        dbUtils.writeFileBackup(file, SerializationUtil.serialize(this));
     }
 
     public void deleteReference(AmazonGlacierArchiveOperations amazonGlacierArchiveOperations,

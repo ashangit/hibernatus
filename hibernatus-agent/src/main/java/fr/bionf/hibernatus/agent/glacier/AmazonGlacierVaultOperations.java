@@ -15,17 +15,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.net.UnknownHostException;
 import java.util.List;
 
-import static fr.bionf.hibernatus.agent.conf.AgentConfig.AGENT_METADATA_PATH_KEY;
+import static fr.bionf.hibernatus.agent.conf.AgentConfig.AGENT_BACKUP_VAULT_NAME;
 
 
 public class AmazonGlacierVaultOperations {
     private static final Logger logger = LoggerFactory.getLogger(AmazonGlacierVaultOperations.class);
 
     private final AgentConfig agentConfig = new AgentConfig();
-    private final String vaultName = agentConfig.getString(AGENT_METADATA_PATH_KEY);
+    private final String vaultName = agentConfig.getString(AGENT_BACKUP_VAULT_NAME);
     private final AmazonGlacierSnsSqsOperations amazonGlacierSNSOperations;
 
     private AmazonGlacier client;

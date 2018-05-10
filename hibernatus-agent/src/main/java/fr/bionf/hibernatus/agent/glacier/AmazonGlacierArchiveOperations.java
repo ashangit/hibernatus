@@ -15,10 +15,9 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.util.Date;
 
-import static fr.bionf.hibernatus.agent.conf.AgentConfig.AGENT_METADATA_PATH_KEY;
+import static fr.bionf.hibernatus.agent.conf.AgentConfig.AGENT_BACKUP_VAULT_NAME;
 
 
 public class AmazonGlacierArchiveOperations {
@@ -28,7 +27,7 @@ public class AmazonGlacierArchiveOperations {
     private final AmazonGlacier client;
 
     private final AgentConfig agentConfig = new AgentConfig();
-    private final String vaultName = agentConfig.getString(AGENT_METADATA_PATH_KEY);
+    private final String vaultName = agentConfig.getString(AGENT_BACKUP_VAULT_NAME);
 
     public AmazonGlacierArchiveOperations(AmazonGlacier client, AWSCredentialsProvider credentials) throws IOException {
         this.client = client;

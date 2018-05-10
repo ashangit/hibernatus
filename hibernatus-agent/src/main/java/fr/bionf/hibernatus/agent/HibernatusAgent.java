@@ -32,7 +32,6 @@ import static fr.bionf.hibernatus.agent.conf.Constants.INTERVAL_BACKUP;
 import static fr.bionf.hibernatus.agent.conf.Constants.INTERVAL_BACKUP_META;
 
 // TODO: create client to list, restore, delete
-// TODO: do admin/maintenance operation on rocksDB
 // TODO: backup rocksDB in AWS
 //              3. send tgz to S3 (we must keep latest-2, latest-1 and latest in S3
 // TODO: restore rocksDB from S3
@@ -42,7 +41,7 @@ import static fr.bionf.hibernatus.agent.conf.Constants.INTERVAL_BACKUP_META;
 
 // TODO use vault inventory + rocksdb snapshot to detect diff
 
-// TODO upload files in big archive of 256 Mo each (big tgz)
+// TODO upload files in big archive of 256 Mo each (big tgz)?
 
 // TODO add transactions to write in rocksdb and to delete (optimistic should be sufficient)
 
@@ -67,7 +66,6 @@ public class HibernatusAgent {
                 .withCredentials(credentials)
                 .withRegion(Regions.EU_WEST_3)
                 .build();
-
         try {
             AmazonGlacierVaultOperations amazonGlacierVaultOperations = new AmazonGlacierVaultOperations(client, credentials);
             amazonGlacierVaultOperations.initVault();
@@ -84,7 +82,6 @@ public class HibernatusAgent {
             dbUtils.open();
         } catch (RocksDBException e) {
             logger.error("", e);
-            dbUtils.close();
             throw e;
         }
     }
@@ -115,7 +112,9 @@ public class HibernatusAgent {
     }
 
     private void close() {
-        dbUtils.close();
+        if (dbUtils != null) {
+            dbUtils.close();
+        }
     }
 
     public static void main(String[] args) throws Exception {

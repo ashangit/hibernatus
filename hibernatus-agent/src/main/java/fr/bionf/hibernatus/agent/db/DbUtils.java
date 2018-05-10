@@ -67,6 +67,7 @@ public class DbUtils {
     }
 
     public void open() throws RocksDBException, IOException {
+        logger.info("Open metadata in {}", dbPath);
         if (Objects.requireNonNull(new File(dbPath).listFiles()).length == 0) {
             restoreBackupIfExist(backupTarBz);
         }

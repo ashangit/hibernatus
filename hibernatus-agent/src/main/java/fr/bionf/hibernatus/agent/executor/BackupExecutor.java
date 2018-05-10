@@ -46,13 +46,11 @@ public class BackupExecutor implements Runnable {
 
     @Override
     public void run() {
-        logger.info("Start backup new/modifies files");
+        logger.info("Backup files to glacier");
         RocksIterator iterator = dbUtils.iteratorFileToTreat();
         // Iterate on file to backup
         for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
             byte[] file = iterator.key();
-            //if (!key.startsWith(""))
-            //    break;
 
             try {
                 FileToTreat fileToTreat = (FileToTreat) SerializationUtil.deserialize(iterator.value());
@@ -75,6 +73,6 @@ public class BackupExecutor implements Runnable {
 
             dbUtils.deleteFileToTreat(file);
         }
-        logger.info("End backup new/modifies files");
+        logger.debug("End backup new/modifies files");
     }
 }

@@ -52,7 +52,7 @@ public class ListFileExecutor implements Runnable {
         // TODO: currently limited to Integer.MAX sub folder otherwise the submit operation will lock and no thread will
         // treat the queue as it is blocked here
         public void run() {
-            logger.debug("Start listing files to backup on {}", folder);
+            logger.info("List files to backup on {}", folder);
             try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(Paths.get(folder))) {
                 for (Path path : directoryStream) {
                     if (Files.isRegularFile(path)) {

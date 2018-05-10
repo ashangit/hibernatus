@@ -12,7 +12,7 @@ public class Constants {
 
     public static final String BACKUP_PREFIX_NAME = "hibernatus_meta_backup-";
 
-    public static final long INTERVAL_BACKUP = 5;
+    public static final long INTERVAL_BACKUP = 1;
     public static final long INTERVAL_BACKUP_META = 1;
 
     public static final String AWS_PROFILE_NAME = "hibernatus";
