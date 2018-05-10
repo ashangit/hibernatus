@@ -23,6 +23,7 @@
         <rocksdb.version>5.11.3</rocksdb.version>
         <jackson.version>2.9.5</jackson.version>
         <logback.version>1.2.3</logback.version>
+        <commons.compress.version>1.16.1</commons.compress.version>
 
         <!-- tests dependency release -->
         <junit.version>4.12</junit.version>

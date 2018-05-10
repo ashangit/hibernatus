@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import fr.bionf.hibernatus.agent.conf.AgentConfig;
 import fr.bionf.hibernatus.agent.executor.BackupExecutor;
+import fr.bionf.hibernatus.agent.executor.BackupMetaExecutor;
 import fr.bionf.hibernatus.agent.executor.ListFileExecutor;
 import fr.bionf.hibernatus.agent.executor.PurgeExecutor;
 import fr.bionf.hibernatus.agent.db.DbUtils;
@@ -26,10 +27,20 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static fr.bionf.hibernatus.agent.conf.AgentConfig.*;
+import static fr.bionf.hibernatus.agent.conf.Constants.AWS_PROFILE_NAME;
+import static fr.bionf.hibernatus.agent.conf.Constants.INTERVAL_BACKUP;
+import static fr.bionf.hibernatus.agent.conf.Constants.INTERVAL_BACKUP_META;
 
 // TODO: create client to list, restore, delete
 // TODO: do admin/maintenance operation on rocksDB
 // TODO: backup rocksDB in AWS
+//              1. backup db with rocksdb mechanism
+//              2. tgz bck folders
+//              3. send tgz to S3 (we must keep latest-2, latest-1 and latest in S3
+// TODO: restore rocksDB from S3
+//              1. Et db initialisation if no db available locally check on S3 in latest or latest-1 or latest-2 is available
+//              2. if not create empty db locally
+//              3. if yes get latest and uncompress in db folder then start db
 // TODO: rocksDB read options (compression...)
 // TODO: add tests
 
@@ -47,7 +58,7 @@ import static fr.bionf.hibernatus.agent.conf.AgentConfig.*;
 public class HibernatusAgent {
     private static final Logger logger = LoggerFactory.getLogger(HibernatusAgent.class);
     // Use .aws/credentials file with hibernatus profile
-    private final ProfileCredentialsProvider credentials = new ProfileCredentialsProvider("hibernatus");
+    private final ProfileCredentialsProvider credentials = new ProfileCredentialsProvider(AWS_PROFILE_NAME);
     private final AgentConfig agentConfig = new AgentConfig();
     private static AmazonGlacier client;
     private DbUtils dbUtils;
@@ -71,8 +82,8 @@ public class HibernatusAgent {
     }
 
     private void initMetadata() throws IOException, RocksDBException {
-        String dbPath = agentConfig.getString(AGENT_METADATA_PATH_KEY);
-        dbUtils = new DbUtils(dbPath);
+        String metaPath = agentConfig.getString(AGENT_METADATA_PATH_KEY);
+        dbUtils = new DbUtils(metaPath);
         try {
             dbUtils.open();
         } catch (RocksDBException e) {
@@ -89,7 +100,6 @@ public class HibernatusAgent {
     }
 
     private void initBackupScheduler() throws IOException {
-        long INTERVAL_BACKUP = 5;
         Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(
                 new BackupExecutor(dbUtils, client, credentials),
                 0, INTERVAL_BACKUP, TimeUnit.SECONDS);
@@ -100,6 +110,12 @@ public class HibernatusAgent {
         Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(
                 new PurgeExecutor(dbUtils, client, credentials),
                 0, interval, TimeUnit.SECONDS);
+    }
+
+    private void initBackupMetaScheduler() throws IOException {
+        Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(
+                new BackupMetaExecutor(dbUtils),
+                0, INTERVAL_BACKUP_META, TimeUnit.DAYS);
     }
 
     private void close() {
@@ -121,6 +137,8 @@ public class HibernatusAgent {
             hServer.initBackupScheduler();
             // Init threads purge
             hServer.initPurgeScheduler();
+            // Init backup meta thread
+            hServer.initBackupMetaScheduler();
 
             while (true) TimeUnit.SECONDS.sleep(60);
         } finally {

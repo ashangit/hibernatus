@@ -131,10 +131,6 @@ public class DbUtilsTest {
         assertFalse(new File(backupFolder, "meta/1").isFile());
         dbUtils.backup();
         assertTrue(new File(backupFolder, "meta/1").isFile());
-        dbUtils.backup();
-        dbUtils.backup();
-        assertFalse(new File(backupFolder, "meta/1").isFile());
-        assertTrue(new File(backupFolder, "meta/2").isFile());
     }
 
     @Test

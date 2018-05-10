@@ -30,12 +30,12 @@ public class DbUtils {
             new ColumnFamilyDescriptor("file-backup".getBytes(), cfOpts)
     );
 
-    public DbUtils(String dbPath) throws RocksDBException, IOException {
+    public DbUtils(String metaPath) throws RocksDBException, IOException {
         // a static method that loads the RocksDB C++ library.
         RocksDB.loadLibrary();
 
-        this.dbPath = dbPath + Constants.SUB_DB_PATH;
-        this.backupPath = dbPath + Constants.SUB_BACKUP_PATH;
+        this.dbPath = metaPath + Constants.SUB_DB_PATH;
+        this.backupPath = metaPath + Constants.SUB_BACKUP_PATH;
 
         createDBPaths();
 
@@ -133,9 +133,13 @@ public class DbUtils {
         }
     }
 
-    void backup() throws RocksDBException {
+    public String getBackupPath() {
+        return backupPath;
+    }
+
+    public void backup() throws RocksDBException {
         backupEngine.createNewBackup(db);
-        backupEngine.purgeOldBackups(2);
+        backupEngine.purgeOldBackups(1);
     }
 
     public void restore() throws RocksDBException {
