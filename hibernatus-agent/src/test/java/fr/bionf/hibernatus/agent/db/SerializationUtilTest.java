@@ -2,9 +2,10 @@ package fr.bionf.hibernatus.agent.db;
 
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 import java.io.IOException;
+
+import static org.junit.Assert.assertEquals;
 
 public class SerializationUtilTest {
     private FileToTreat fileToTreat;

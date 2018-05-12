@@ -4,32 +4,23 @@ import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.glacier.AmazonGlacier;
 import com.amazonaws.services.glacier.AmazonGlacierClientBuilder;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import fr.bionf.hibernatus.agent.conf.AgentConfig;
+import fr.bionf.hibernatus.agent.db.DbUtils;
 import fr.bionf.hibernatus.agent.executor.BackupExecutor;
 import fr.bionf.hibernatus.agent.executor.BackupMetaExecutor;
 import fr.bionf.hibernatus.agent.executor.ListFileExecutor;
 import fr.bionf.hibernatus.agent.executor.PurgeExecutor;
-import fr.bionf.hibernatus.agent.db.DbUtils;
 import fr.bionf.hibernatus.agent.glacier.AmazonGlacierVaultOperations;
 import org.rocksdb.RocksDBException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static fr.bionf.hibernatus.agent.conf.AgentConfig.*;
-import static fr.bionf.hibernatus.agent.conf.Constants.AWS_PROFILE_NAME;
-import static fr.bionf.hibernatus.agent.conf.Constants.INTERVAL_BACKUP;
-import static fr.bionf.hibernatus.agent.conf.Constants.INTERVAL_BACKUP_META;
+import static fr.bionf.hibernatus.agent.conf.Constants.*;
 
 // TODO: create client to list, restore, delete
 // TODO: backup rocksDB in AWS

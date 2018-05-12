@@ -27,8 +27,8 @@ public class FileBackup implements Serializable {
         dbUtils.writeFileBackup(file, SerializationUtil.serialize(this));
     }
 
-    public void deleteReference(AmazonGlacierArchiveOperations amazonGlacierArchiveOperations,
-                                DbUtils dbUtils, long awsFileKey) throws IOException, RocksDBException {
+    void deleteReference(AmazonGlacierArchiveOperations amazonGlacierArchiveOperations,
+                         DbUtils dbUtils, long awsFileKey) throws IOException, RocksDBException {
         amazonGlacierArchiveOperations.delete(references.get(awsFileKey).awsObject);
         references.remove(awsFileKey);
 

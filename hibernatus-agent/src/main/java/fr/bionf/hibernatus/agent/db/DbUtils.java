@@ -120,7 +120,7 @@ public class DbUtils {
         return db.get(columnFamilyHandle, key);
     }
 
-    void writeFileBackup(byte[] key, byte[] value) throws RocksDBException {
+    public void writeFileBackup(byte[] key, byte[] value) throws RocksDBException {
         this.write(columnFamilyHandleList.get(2), key, value);
     }
 

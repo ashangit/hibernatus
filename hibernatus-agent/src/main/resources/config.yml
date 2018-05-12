@@ -1,7 +1,4 @@
 ---
 metadata.path: /tmp/hibernatus/metadata
-backup.interval: 10
-bakup.retention: 1
 backup.folders:
   - /Users/n.fraison/IdeaProjects/hibernatus/hibernatus-agent/src/main/resources
-purge.interval: 86400

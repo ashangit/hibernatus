@@ -1,8 +1,8 @@
 package fr.bionf.hibernatus.agent.db;
 
 import fr.bionf.hibernatus.agent.conf.Constants;
-import fr.bionf.hibernatus.agent.executor.BackupMetaExecutor;
 import fr.bionf.hibernatus.agent.glacier.AmazonGlacierArchiveOperations;
+import fr.bionf.hibernatus.agent.junit.rules.WithDbUtils;
 import fr.bionf.hibernatus.agent.utils.TarFolder;
 import org.junit.Before;
 import org.junit.Rule;
@@ -18,14 +18,15 @@ import java.nio.file.Files;
 import java.util.concurrent.TimeUnit;
 
 import static fr.bionf.hibernatus.agent.conf.Constants.BACKUP_PREFIX_NAME;
-import static org.junit.Assert.*;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 
 public class DbUtilsTest {
     @Rule
-    public TemporaryFolder rootDbFolder = new TemporaryFolder();
+    public WithDbUtils withDbUtils = new WithDbUtils();
+    public TemporaryFolder rootDbFolder;
     private File dbFolder;
     private File backupFolder;
 
@@ -34,19 +35,9 @@ public class DbUtilsTest {
     private DbUtils dbUtils;
     private AmazonGlacierArchiveOperations amazonGlacierArchiveOperations;
 
-    private void writeData(long from, long to) throws IOException, RocksDBException {
-        for (long i = from; i <= to; i++) {
-            byte[] fileId = String.valueOf(i).getBytes();
-            FileToTreat fileToTreat = new FileToTreat(i, i);
-            dbUtils.writeFileToTreat(fileId, SerializationUtil.serialize(fileToTreat));
-            FileBackup fileBackuped = new FileBackup(fileId);
-            fileBackuped.backupReference(amazonGlacierArchiveOperations, dbUtils, fileToTreat, retention);
-            dbUtils.writeFileBackup(fileId, SerializationUtil.serialize(fileBackuped));
-        }
-    }
-
     @Before
-    public void setUp() throws IOException, RocksDBException {
+    public void setUp() {
+        rootDbFolder = withDbUtils.getRootDbFolder();
         amazonGlacierArchiveOperations = mock(AmazonGlacierArchiveOperations.class);
 
         dbFolder = new File(rootDbFolder.getRoot().getAbsolutePath()
@@ -54,11 +45,7 @@ public class DbUtilsTest {
         backupFolder = new File(rootDbFolder.getRoot().getAbsolutePath()
                 + Constants.SUB_BACKUP_PATH);
 
-        dbUtils = new DbUtils(rootDbFolder.getRoot().getAbsolutePath());
-        dbUtils.open();
-
-        // Write few data
-        writeData(0L, 10L);
+        dbUtils = withDbUtils.getDbUtils();
     }
 
     @Test
@@ -69,7 +56,9 @@ public class DbUtilsTest {
     }
 
     @Test
-    public void should_restore_db_from_tarbz_backup() throws IOException, RocksDBException, ClassNotFoundException {
+    public void should_restore_db_from_tarbz_backup() throws IOException, RocksDBException {
+        System.out.println(dbUtils);
+        System.out.println(withDbUtils.getDbUtils());
         dbUtils.backup();
 
         TemporaryFolder rootRestoreFolder = new TemporaryFolder();
@@ -157,7 +146,7 @@ public class DbUtilsTest {
     @Test
     public void restore_db() throws RocksDBException, IOException {
         dbUtils.backup();
-        writeData(11L, 20L);
+        withDbUtils.writeData(11L, 20L);
         assertNotNull(dbUtils.getFileBackup("12".getBytes()));
         RocksIterator iterator = dbUtils.iteratorFileBackup();
         int nbKey = 0;

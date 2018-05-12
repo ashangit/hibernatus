@@ -1,6 +1,7 @@
 package fr.bionf.hibernatus.agent.db;
 
 import fr.bionf.hibernatus.agent.glacier.AmazonGlacierArchiveOperations;
+import fr.bionf.hibernatus.agent.junit.rules.WithDbUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -11,11 +12,14 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
 public class FileBackupTest {
+    @Rule
+    public WithDbUtils withDbUtils = new WithDbUtils();
+
     @Rule
     public TemporaryFolder rootDbFolder = new TemporaryFolder();
     private String archiveId = "archive_to_delete";
@@ -36,7 +40,7 @@ public class FileBackupTest {
 
         amazonGlacierArchiveOperations = mock(AmazonGlacierArchiveOperations.class);
         when(amazonGlacierArchiveOperations.upload(new String(file))).thenReturn(archiveId);
-        dbUtils = mock(DbUtils.class);
+        dbUtils = withDbUtils.getDbUtils();
 
         fileToTreat = new FileToTreat(1L, 1L);
         fileBackup.backupReference(amazonGlacierArchiveOperations, dbUtils, fileToTreat, retention);
@@ -46,7 +50,7 @@ public class FileBackupTest {
     }
 
     @Test
-    public void should_backup_new_file() throws IOException, RocksDBException {
+    public void should_backup_new_file() throws IOException, RocksDBException, ClassNotFoundException {
         verify(dbUtils, times(2)).writeFileBackup(any(byte[].class), any(byte[].class));
 
         String archiveId = "archive_id";
@@ -61,14 +65,22 @@ public class FileBackupTest {
 
         verify(amazonGlacierArchiveOperations).upload(new String(file));
         verify(dbUtils, times(3)).writeFileBackup(any(byte[].class), any(byte[].class));
+
+        byte[] fileBackupValGet = dbUtils.getFileBackup(file);
+        FileBackup fileBackupedGet = (FileBackup) SerializationUtil.deserialize(fileBackupValGet);
+        assertEquals(fileBackup.references.firstEntry().getValue(), fileBackupedGet.references.firstEntry().getValue());
     }
 
     @Test
-    public void should_remove_file_in_archive() throws IOException, RocksDBException {
+    public void should_remove_file_in_archive() throws IOException, RocksDBException, ClassNotFoundException {
         verify(dbUtils, times(2)).writeFileBackup(any(byte[].class), any(byte[].class));
         fileBackup.deleteReference(amazonGlacierArchiveOperations, dbUtils, fileBackup.references.firstEntry().getKey());
         verify(amazonGlacierArchiveOperations).delete(archiveId);
         verify(dbUtils, times(3)).writeFileBackup(any(byte[].class), any(byte[].class));
+
+        byte[] fileBackupValGet = dbUtils.getFileBackup(file);
+        FileBackup fileBackupedGet = (FileBackup) SerializationUtil.deserialize(fileBackupValGet);
+        assertEquals(1, fileBackupedGet.references.size());
 
         fileBackup.deleteReference(amazonGlacierArchiveOperations, dbUtils, fileBackup.references.firstEntry().getKey());
         verify(dbUtils).deleteFileBackup(file);
