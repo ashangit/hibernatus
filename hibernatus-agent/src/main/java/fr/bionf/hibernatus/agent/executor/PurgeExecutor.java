@@ -4,9 +4,9 @@ import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.glacier.AmazonGlacier;
 import fr.bionf.hibernatus.agent.conf.AgentConfig;
 import fr.bionf.hibernatus.agent.db.DbUtils;
-import fr.bionf.hibernatus.agent.db.FileBackup;
-import fr.bionf.hibernatus.agent.db.SerializationUtil;
+import fr.bionf.hibernatus.agent.db.FileBackupAction;
 import fr.bionf.hibernatus.agent.glacier.AmazonGlacierArchiveOperations;
+import fr.bionf.hibernatus.agent.proto.Db;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
 import org.slf4j.Logger;
@@ -38,9 +38,9 @@ public class PurgeExecutor implements Runnable {
         // Iterate on file to backup
         for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
             try {
-                FileBackup fileBackup = (FileBackup) SerializationUtil.deserialize(iterator.value());
+                FileBackupAction fileBackup = new FileBackupAction(Db.FileBackup.parseFrom(iterator.value()));
                 fileBackup.purge(amazonGlacierArchiveOperations, dbUtils, now, retention);
-            } catch (IOException | ClassNotFoundException | RocksDBException e) {
+            } catch (IOException | RocksDBException e) {
                 logger.error("", e);
             }
         }

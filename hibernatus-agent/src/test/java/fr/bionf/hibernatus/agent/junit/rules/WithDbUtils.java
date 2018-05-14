@@ -1,10 +1,9 @@
 package fr.bionf.hibernatus.agent.junit.rules;
 
 import fr.bionf.hibernatus.agent.db.DbUtils;
-import fr.bionf.hibernatus.agent.db.FileBackup;
-import fr.bionf.hibernatus.agent.db.FileToTreat;
-import fr.bionf.hibernatus.agent.db.SerializationUtil;
+import fr.bionf.hibernatus.agent.db.FileBackupAction;
 import fr.bionf.hibernatus.agent.glacier.AmazonGlacierArchiveOperations;
+import fr.bionf.hibernatus.agent.proto.Db;
 import org.junit.rules.ExternalResource;
 import org.junit.rules.TemporaryFolder;
 import org.rocksdb.RocksDBException;
@@ -12,12 +11,11 @@ import org.rocksdb.RocksDBException;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.*;
 
 public class WithDbUtils extends ExternalResource {
 
-    public TemporaryFolder rootDbFolder = new TemporaryFolder();
+    private TemporaryFolder rootDbFolder = new TemporaryFolder();
     private DbUtils dbUtils;
     private DbUtils spyDbUtils;
     private AmazonGlacierArchiveOperations amazonGlacierArchiveOperations;
@@ -27,6 +25,7 @@ public class WithDbUtils extends ExternalResource {
     protected void before() throws IOException, RocksDBException {
         rootDbFolder.create();
         amazonGlacierArchiveOperations = mock(AmazonGlacierArchiveOperations.class);
+        when(amazonGlacierArchiveOperations.upload(any(String.class))).thenReturn("unittest");
 
         dbUtils = new DbUtils(rootDbFolder.getRoot().getAbsolutePath());
         dbUtils.open();
@@ -40,11 +39,12 @@ public class WithDbUtils extends ExternalResource {
     public void writeData(long from, long to) throws IOException, RocksDBException {
         for (long i = from; i <= to; i++) {
             byte[] fileId = String.valueOf(i).getBytes();
-            FileToTreat fileToTreat = new FileToTreat(i, i);
-            dbUtils.writeFileToTreat(fileId, SerializationUtil.serialize(fileToTreat));
-            FileBackup fileBackuped = new FileBackup(fileId);
+            Db.FileToTreat fileToTreat = Db.FileToTreat.newBuilder().setFilename(String.valueOf(i))
+                    .setLength(i).setMtime(i).build();
+            dbUtils.writeFileToTreat(fileId, fileToTreat.toByteArray());
+            FileBackupAction fileBackuped = new FileBackupAction(String.valueOf(i));
             fileBackuped.backupReference(amazonGlacierArchiveOperations, dbUtils, fileToTreat, retention);
-            dbUtils.writeFileBackup(fileId, SerializationUtil.serialize(fileBackuped));
+            dbUtils.writeFileBackup(fileId, fileBackuped.getFileBackupBuilder().toByteArray());
         }
     }
 
@@ -52,7 +52,7 @@ public class WithDbUtils extends ExternalResource {
         return spyDbUtils;
     }
 
-    public TemporaryFolder getRootDbFolder(){
+    public TemporaryFolder getRootDbFolder() {
         return rootDbFolder;
     }
 }

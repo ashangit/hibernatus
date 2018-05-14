@@ -3,6 +3,7 @@ package fr.bionf.hibernatus.agent.db;
 import fr.bionf.hibernatus.agent.conf.Constants;
 import fr.bionf.hibernatus.agent.glacier.AmazonGlacierArchiveOperations;
 import fr.bionf.hibernatus.agent.junit.rules.WithDbUtils;
+import fr.bionf.hibernatus.agent.proto.Db;
 import fr.bionf.hibernatus.agent.utils.TarFolder;
 import org.junit.Before;
 import org.junit.Rule;
@@ -12,6 +13,7 @@ import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.file.Files;
@@ -21,7 +23,9 @@ import static fr.bionf.hibernatus.agent.conf.Constants.BACKUP_PREFIX_NAME;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class DbUtilsTest {
     @Rule
@@ -36,9 +40,10 @@ public class DbUtilsTest {
     private AmazonGlacierArchiveOperations amazonGlacierArchiveOperations;
 
     @Before
-    public void setUp() {
+    public void setUp() throws FileNotFoundException {
         rootDbFolder = withDbUtils.getRootDbFolder();
         amazonGlacierArchiveOperations = mock(AmazonGlacierArchiveOperations.class);
+        when(amazonGlacierArchiveOperations.upload(any(String.class))).thenReturn("unittest");
 
         dbFolder = new File(rootDbFolder.getRoot().getAbsolutePath()
                 + Constants.SUB_DB_PATH);
@@ -75,7 +80,7 @@ public class DbUtilsTest {
     }
 
     @Test
-    public void should_create_fileToTreat_iterate_and_delete() throws IOException, RocksDBException, ClassNotFoundException {
+    public void should_create_fileToTreat_iterate_and_delete() throws IOException, RocksDBException {
         RocksIterator iterator = dbUtils.iteratorFileToTreat();
         int nbKey = 0;
         for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
@@ -84,11 +89,12 @@ public class DbUtilsTest {
         assertEquals(11, nbKey);
 
         byte[] fileId = "11".getBytes();
-        FileToTreat fileToTreat = new FileToTreat(1L, 1L);
+        Db.FileToTreat fileToTreat = Db.FileToTreat.newBuilder().setFilename("11")
+                .setLength(1L).setMtime(1L).build();
 
-        dbUtils.writeFileToTreat(fileId, SerializationUtil.serialize(new FileToTreat(1L, 1L)));
+        dbUtils.writeFileToTreat(fileId, fileToTreat.toByteArray());
 
-        FileToTreat fileToTreatGet = (FileToTreat) SerializationUtil.deserialize(dbUtils.getFileToTreat(fileId));
+        Db.FileToTreat fileToTreatGet = Db.FileToTreat.parseFrom(dbUtils.getFileToTreat(fileId));
         assertEquals(fileToTreat, fileToTreatGet);
 
         iterator = dbUtils.iteratorFileToTreat();
@@ -104,7 +110,7 @@ public class DbUtilsTest {
     }
 
     @Test
-    public void should_create_fileBackup_iterate_and_delete() throws IOException, RocksDBException, ClassNotFoundException {
+    public void should_create_fileBackup_iterate_and_delete() throws IOException, RocksDBException {
         RocksIterator iterator = dbUtils.iteratorFileBackup();
         int nbKey = 0;
         for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
@@ -113,16 +119,17 @@ public class DbUtilsTest {
         assertEquals(11, nbKey);
 
         byte[] fileId = "11".getBytes();
-        FileBackup fileBackuped = new FileBackup(fileId);
-        FileToTreat fileToTreat = new FileToTreat(11L, 11L);
+        FileBackupAction fileBackuped = new FileBackupAction("11");
+        Db.FileToTreat fileToTreat = Db.FileToTreat.newBuilder().setFilename("11")
+                .setLength(11L).setMtime(11L).build();
         fileBackuped.backupReference(amazonGlacierArchiveOperations, dbUtils, fileToTreat, retention);
-        byte[] fileBackupVal = SerializationUtil.serialize(fileBackuped);
+        byte[] fileBackupVal = fileBackuped.getFileBackupBuilder().toByteArray();
         dbUtils.writeFileBackup(fileId, fileBackupVal);
 
         byte[] fileBackupValGet = dbUtils.getFileBackup(fileId);
-        FileBackup fileBackupedGet = (FileBackup) SerializationUtil.deserialize(fileBackupValGet);
-        assertEquals(fileBackuped.references.firstEntry().getValue(),
-                fileBackupedGet.references.firstEntry().getValue());
+        Db.FileBackup fileBackupedGet = Db.FileBackup.parseFrom(fileBackupValGet);
+        assertEquals(fileBackuped.getFileBackupBuilder().getReferencesMap(),
+                fileBackupedGet.getReferencesMap());
 
         iterator = dbUtils.iteratorFileBackup();
         nbKey = 0;

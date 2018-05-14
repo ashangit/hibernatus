@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option java_package = "fr.bionf.hibernatus.agent.proto";
+
+message FileToTreat {
+    string filename = 1;
+    int64 mtime = 2;
+    int64 length = 3;
+}
+
+message FileBackup {
+    message AwsFile {
+        string awsObject = 1;
+        int64 length = 2;
+        int64 lastModified = 3;
+        int64 lastBackuped = 4;
+        int64 deleteEpoch = 5;
+    }
+    string filename = 1;
+    map<int64, AwsFile> references = 2;
+}

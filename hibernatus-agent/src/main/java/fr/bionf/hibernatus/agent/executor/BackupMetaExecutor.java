@@ -18,13 +18,12 @@ public class BackupMetaExecutor implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(BackupMetaExecutor.class);
 
     private final DbUtils dbUtils;
-    private final String metaPath;
-    public TarFolder tarFolder;
+    TarFolder tarFolder;
 
     public BackupMetaExecutor(DbUtils dbUtils) throws IOException {
         AgentConfig agentConfig = new AgentConfig();
         this.dbUtils = dbUtils;
-        this.metaPath = agentConfig.getString(AGENT_METADATA_PATH_KEY);
+        String metaPath = agentConfig.getString(AGENT_METADATA_PATH_KEY);
         this.tarFolder = new TarFolder(dbUtils.getBackupPath(), metaPath + File.separator + BACKUP_PREFIX_NAME +
                 InetAddress.getLocalHost().getHostName() + ".tbz2");
     }

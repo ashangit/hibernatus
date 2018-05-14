@@ -2,8 +2,7 @@ package fr.bionf.hibernatus.agent.executor;
 
 import fr.bionf.hibernatus.agent.conf.AgentConfig;
 import fr.bionf.hibernatus.agent.db.DbUtils;
-import fr.bionf.hibernatus.agent.db.FileToTreat;
-import fr.bionf.hibernatus.agent.db.SerializationUtil;
+import fr.bionf.hibernatus.agent.proto.Db;
 import org.rocksdb.RocksDBException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,10 +57,14 @@ public class ListFileExecutor implements Runnable {
                     if (Files.isRegularFile(path)) {
                         String fileS = path.toString();
                         File file = new File(fileS);
+
                         dbUtils.writeFileToTreat(fileS.getBytes(),
-                                SerializationUtil.serialize(new FileToTreat(
-                                        file.lastModified(),
-                                        file.length())));
+                                Db.FileToTreat.newBuilder()
+                                        .setFilename(file.getAbsolutePath())
+                                        .setLength(file.length())
+                                        .setMtime(file.lastModified())
+                                        .build().toByteArray()
+                        );
                     } else if (Files.isDirectory(path)) {
                         cachedExecutor.submit(new ListFile(path.toString()));
                     }

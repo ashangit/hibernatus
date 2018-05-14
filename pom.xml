@@ -19,11 +19,18 @@
         <maven.compiler.target>1.8</maven.compiler.target>
 
         <!-- dependency release -->
-        <aws.version>1.11.323</aws.version>
+        <aws.version>1.11.327</aws.version>
         <rocksdb.version>5.11.3</rocksdb.version>
         <jackson.version>2.9.5</jackson.version>
         <logback.version>1.2.3</logback.version>
         <commons.compress.version>1.16.1</commons.compress.version>
+        <protobuf.version>3.5.1</protobuf.version>
+
+        <!-- maven plugin release -->
+        <os-maven-plugin.version>1.6.0</os-maven-plugin.version>
+        <protoc-jar-maven-plugin.version>3.5.1.1</protoc-jar-maven-plugin.version>
+        <maven-shade-plugin.version>3.1.1</maven-shade-plugin.version>
+        <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
 
         <!-- tests dependency release -->
         <junit.version>4.12</junit.version>
@@ -45,4 +52,14 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <extensions>
+            <extension>
+                <groupId>kr.motd.maven</groupId>
+                <artifactId>os-maven-plugin</artifactId>
+                <version>${os-maven-plugin.version}</version>
+            </extension>
+        </extensions>
+    </build>
 </project>

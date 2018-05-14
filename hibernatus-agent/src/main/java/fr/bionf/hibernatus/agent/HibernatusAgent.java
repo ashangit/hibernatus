@@ -27,7 +27,6 @@ import static fr.bionf.hibernatus.agent.conf.Constants.*;
 //              3. send tgz to S3 (we must keep latest-2, latest-1 and latest in S3
 // TODO: restore rocksDB from S3
 //              1. Et db initialisation if no db available locally check on S3 in latest or latest-1 or latest-2 is available
-// TODO: rocksDB read options (compression...)
 // TODO: add tests
 
 // TODO use vault inventory + rocksdb snapshot to detect diff

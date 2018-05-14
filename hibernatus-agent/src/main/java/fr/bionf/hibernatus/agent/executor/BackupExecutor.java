@@ -4,10 +4,9 @@ import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.glacier.AmazonGlacier;
 import fr.bionf.hibernatus.agent.conf.AgentConfig;
 import fr.bionf.hibernatus.agent.db.DbUtils;
-import fr.bionf.hibernatus.agent.db.FileBackup;
-import fr.bionf.hibernatus.agent.db.FileToTreat;
-import fr.bionf.hibernatus.agent.db.SerializationUtil;
+import fr.bionf.hibernatus.agent.db.FileBackupAction;
 import fr.bionf.hibernatus.agent.glacier.AmazonGlacierArchiveOperations;
+import fr.bionf.hibernatus.agent.proto.Db;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
 import org.slf4j.Logger;
@@ -32,11 +31,8 @@ public class BackupExecutor implements Runnable {
         this.retention = TimeUnit.DAYS.toMillis(agentConfig.getLong(AGENT_BACKUP_RETENTION_KEY));
     }
 
-    private void backup(byte[] file, FileToTreat fileToTreat, FileBackup fileBackuped) throws IOException, RocksDBException {
-        logger.info("Backup file {}", new String(file));
-        if (fileBackuped == null) {
-            fileBackuped = new FileBackup(file);
-        }
+    private void backup(Db.FileToTreat fileToTreat, FileBackupAction fileBackuped) throws IOException, RocksDBException {
+        logger.info("Backup file {}", fileToTreat.getFilename());
         fileBackuped.backupReference(
                 amazonGlacierArchiveOperations,
                 dbUtils,
@@ -51,23 +47,22 @@ public class BackupExecutor implements Runnable {
         // Iterate on file to backup
         for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
             byte[] file = iterator.key();
-
             try {
-                FileToTreat fileToTreat = (FileToTreat) SerializationUtil.deserialize(iterator.value());
+                Db.FileToTreat fileToTreat = Db.FileToTreat.parseFrom(iterator.value());
                 byte[] value = dbUtils.getFileBackup(file);
 
                 // Check if file already backup
                 if (value == null) {
-                    backup(file, fileToTreat, null);
+                    backup(fileToTreat, new FileBackupAction(fileToTreat.getFilename()));
                 } else {
                     // Check if file has been modified
-                    FileBackup fileBackuped = (FileBackup) SerializationUtil.deserialize(value);
-                    FileBackup.AwsFile awsFile = fileBackuped.references.get(fileBackuped.references.lastKey());
-                    if (!awsFile.lastModified.equals(fileToTreat.mtime) || !awsFile.length.equals(fileToTreat.length)) {
-                        backup(file, fileToTreat, fileBackuped);
+                    FileBackupAction fileBackuped = new FileBackupAction(Db.FileBackup.parseFrom(value));
+                    Db.FileBackup.AwsFile awsFile = fileBackuped.getReferences().get(fileBackuped.getReferences().lastKey());
+                    if (awsFile.getLastModified() != fileToTreat.getMtime() || awsFile.getLength() != fileToTreat.getLength()) {
+                        backup(fileToTreat, fileBackuped);
                     }
                 }
-            } catch (ClassNotFoundException | IOException | RocksDBException e) {
+            } catch (IOException | RocksDBException e) {
                 logger.error("", e);
             }
 
